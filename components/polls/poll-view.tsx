@@ -58,11 +58,11 @@ export function PollView({ poll }: PollViewProps) {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })
+    const d = new Date(dateString)
+    const year = d.getUTCFullYear()
+    const month = d.toLocaleString("en-US", { month: "long", timeZone: "UTC" })
+    const day = d.getUTCDate()
+    return `${month} ${day}, ${year}`
   }
 
   return (

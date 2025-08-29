@@ -52,11 +52,12 @@ const mockPolls: Poll[] = [
 
 export function PollsList() {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
+    const d = new Date(dateString)
+    // Use UTC to be deterministic between server and client
+    const year = d.getUTCFullYear()
+    const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })
+    const day = d.getUTCDate()
+    return `${month} ${day}, ${year}`
   }
 
   return (

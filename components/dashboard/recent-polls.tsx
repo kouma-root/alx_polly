@@ -31,10 +31,10 @@ const recentPolls = [
 
 export function RecentPolls() {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    })
+    const d = new Date(dateString)
+    const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })
+    const day = d.getUTCDate()
+    return `${month} ${day}`
   }
 
   return (

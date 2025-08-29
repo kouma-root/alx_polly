@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useForm, useFieldArray } from "react-hook-form"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 
@@ -28,7 +28,7 @@ const formSchema = z.object({
   description: z.string().min(10, {
     message: "Description must be at least 10 characters.",
   }),
-  options: z.array(z.string()).min(2, {
+  options: z.array(z.string().min(1, "Option cannot be empty")).min(2, {
     message: "You must have at least 2 options.",
   }).max(10, {
     message: "You can have at most 10 options.",
@@ -48,7 +48,8 @@ export function CreatePollForm() {
     },
   })
 
-  const { fields, append, remove } = form.useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
     name: "options",
   })
 
@@ -56,16 +57,21 @@ export function CreatePollForm() {
     setIsLoading(true)
     
     try {
-      // TODO: Implement actual poll creation logic
-      console.log("Creating poll:", values)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      const res = await fetch("/api/polls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data?.error || "Failed to create poll")
+      }
+
       toast.success("Poll created successfully!")
       router.push("/polls")
-    } catch (error) {
-      toast.error("Failed to create poll. Please try again.")
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to create poll. Please try again.")
     } finally {
       setIsLoading(false)
     }
