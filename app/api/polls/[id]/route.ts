@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server"
 import { pollService } from "@/lib/db/poll-service"
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const poll = await pollService.getPollById(params.id)
+    const { id } = await params
+    const poll = await pollService.getPollById(id)
     
     if (!poll) {
       return NextResponse.json(
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const { id } = await params
     const body = await request.json()
     
     if (!body.optionId) {
@@ -45,7 +47,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // TODO: Get actual user ID from session
     const userId = "1"
     
-    await pollService.vote(params.id, body.optionId, userId)
+    await pollService.vote(id, body.optionId, userId)
     
     return NextResponse.json({
       success: true,

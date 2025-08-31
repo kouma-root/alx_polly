@@ -17,6 +17,8 @@ A modern Next.js application for creating and voting on polls, built with TypeSc
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: Shadcn UI
+- **Authentication**: Supabase Auth
+- **Database**: Supabase (PostgreSQL)
 - **Forms**: React Hook Form with Zod validation
 - **Icons**: Lucide React
 - **Notifications**: Sonner
@@ -76,12 +78,16 @@ alx_polly/
    npm install
    ```
 
-2. **Run the development server**:
+2. **Set up Supabase**:
+   - Follow the [Supabase Setup Guide](./SUPABASE_SETUP.md)
+   - Create a `.env.local` file with your Supabase credentials
+
+3. **Run the development server**:
    ```bash
    npm run dev
    ```
 
-3. **Open your browser** and navigate to `http://localhost:3000`
+4. **Open your browser** and navigate to `http://localhost:3000`
 
 ## Available Scripts
 
@@ -92,9 +98,11 @@ alx_polly/
 ## Key Features Implementation
 
 ### Authentication
+- Supabase authentication with email/password
 - Login and registration forms with validation
 - Form handling with React Hook Form and Zod
-- Placeholder authentication service (ready for backend integration)
+- Protected routes with middleware
+- User context for app-wide authentication state
 
 ### Poll Management
 - Create polls with multiple options (2-10 options)
@@ -134,15 +142,15 @@ The app uses Tailwind CSS with:
 
 To complete the application, you'll need to:
 
-1. **Implement Backend Integration**:
-   - Replace placeholder services with actual database operations
-   - Add proper authentication (NextAuth.js, Auth0, or custom solution)
-   - Implement session management
+1. **Set up Supabase**:
+   - Follow the [Supabase Setup Guide](./SUPABASE_SETUP.md)
+   - Configure your environment variables
+   - Set up authentication settings
 
-2. **Add Database**:
-   - Set up PostgreSQL, MongoDB, or your preferred database
-   - Create database schemas for users, polls, and votes
-   - Implement data persistence
+2. **Implement Database Integration**:
+   - Replace placeholder services with actual Supabase database operations
+   - Create database schemas for polls and votes
+   - Implement data persistence with Supabase
 
 3. **Enhance Features**:
    - Add poll categories and tags

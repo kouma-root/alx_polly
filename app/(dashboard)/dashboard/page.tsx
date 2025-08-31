@@ -3,6 +3,8 @@ import { DashboardHeader } from "@/components/layout/dashboard-header"
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { RecentPolls } from "@/components/dashboard/recent-polls"
 import { CreatePollButton } from "@/components/dashboard/create-poll-button"
+import { ProtectedRoute } from "@/components/auth/protected-route"
+import { UserInfo } from "@/components/dashboard/user-info"
 
 export const metadata: Metadata = {
   title: "Dashboard | Polling App",
@@ -11,24 +13,27 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <DashboardHeader
-        heading="Dashboard"
-        text="Welcome back! Here's an overview of your polls and activity."
-      />
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <DashboardStats />
-      </div>
-      
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <div className="col-span-4">
-          <RecentPolls />
+    <ProtectedRoute>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <UserInfo />
+        <DashboardHeader
+          heading="Dashboard"
+          text="Welcome back! Here's an overview of your polls and activity."
+        />
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <DashboardStats />
         </div>
-        <div className="col-span-3">
-          <CreatePollButton />
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <div className="col-span-4">
+            <RecentPolls />
+          </div>
+          <div className="col-span-3">
+            <CreatePollButton />
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

@@ -4,9 +4,9 @@ import { PollView } from "@/components/polls/poll-view"
 import { PollResults } from "@/components/polls/poll-results"
 
 interface PollPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function generateMetadata({ params }: PollPageProps): Promise<Metadata> {
@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PollPageProps): Promise<Metad
 
 export default async function PollPage({ params }: PollPageProps) {
   // TODO: Fetch poll data by ID
-  const pollId = params.id
+  const { id: pollId } = await params
   
   // Placeholder - replace with actual data fetching
   const poll = {

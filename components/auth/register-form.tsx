@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { createClient } from "@/lib/supabase/client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +38,7 @@ const formSchema = z.object({
 export function RegisterForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const supabase = createClient()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,16 +54,26 @@ export function RegisterForm() {
     setIsLoading(true)
     
     try {
-      // TODO: Implement actual registration logic
-      console.log("Registration attempt:", values)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success("Account created successfully!")
-      router.push("/login")
-    } catch (error) {
-      toast.error("Registration failed. Please try again.")
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            name: values.name,
+          },
+        },
+      })
+
+      if (error) {
+        throw error
+      }
+
+      if (data.user) {
+        toast.success("Account created successfully! Please check your email to verify your account.")
+        router.push("/login")
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Registration failed. Please try again.")
     } finally {
       setIsLoading(false)
     }

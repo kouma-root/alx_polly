@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 
@@ -35,11 +35,14 @@ const formSchema = z.object({
   }),
 })
 
+type FormData = z.infer<typeof formSchema>
+
 export function CreatePollForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const [options, setOptions] = React.useState<string[]>(["", ""])
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -48,19 +51,19 @@ export function CreatePollForm() {
     },
   })
 
-  const { fields, append, remove, update } = useFieldArray({
-    control: form.control,
-    name: "options",
-  })
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormData) {
     setIsLoading(true)
     
     try {
+      const formData = {
+        ...values,
+        options: options.filter(option => option.trim() !== ""),
+      }
+
       const res = await fetch("/api/polls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify(formData),
       })
 
       if (!res.ok) {
@@ -78,15 +81,21 @@ export function CreatePollForm() {
   }
 
   const addOption = () => {
-    if (fields.length < 10) {
-      append("")
+    if (options.length < 10) {
+      setOptions([...options, ""])
     }
   }
 
   const removeOption = (index: number) => {
-    if (fields.length > 2) {
-      remove(index)
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== index))
     }
+  }
+
+  const updateOption = (index: number, value: string) => {
+    const newOptions = [...options]
+    newOptions[index] = value
+    setOptions(newOptions)
   }
 
   return (
@@ -140,25 +149,17 @@ export function CreatePollForm() {
             <CardTitle>Poll Options</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-2">
-                <FormField
-                  control={form.control}
-                  name={`options.${index}`}
-                  render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormControl>
-                        <Input
-                          placeholder={`Option ${index + 1}`}
-                          disabled={isLoading}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                {fields.length > 2 && (
+            {options.map((option, index) => (
+              <div key={index} className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    placeholder={`Option ${index + 1}`}
+                    disabled={isLoading}
+                    value={option}
+                    onChange={(e) => updateOption(index, e.target.value)}
+                  />
+                </div>
+                {options.length > 2 && (
                   <Button
                     type="button"
                     variant="outline"
@@ -172,7 +173,7 @@ export function CreatePollForm() {
               </div>
             ))}
             
-            {fields.length < 10 && (
+            {options.length < 10 && (
               <Button
                 type="button"
                 variant="outline"

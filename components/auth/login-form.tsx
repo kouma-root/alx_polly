@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { createClient } from "@/lib/supabase/client"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -30,6 +31,7 @@ const formSchema = z.object({
 export function LoginForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const supabase = createClient()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,16 +45,22 @@ export function LoginForm() {
     setIsLoading(true)
     
     try {
-      // TODO: Implement actual login logic
-      console.log("Login attempt:", values)
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success("Login successful!")
-      router.push("/dashboard")
-    } catch (error) {
-      toast.error("Login failed. Please try again.")
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      if (data.user) {
+        toast.success("Login successful!")
+        router.push("/dashboard")
+        router.refresh()
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
