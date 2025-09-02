@@ -1,56 +1,20 @@
-"use client"
-
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Vote, Users, Calendar } from "lucide-react"
+import { pollService } from "@/lib/db/poll-service"
 
-// TODO: Replace with actual poll type
-interface Poll {
-  id: string
-  title: string
-  description: string
-  totalVotes: number
-  isActive: boolean
-  createdAt: string
-  author: {
-    name: string
+export async function PollsList() {
+  let polls = []
+  
+  try {
+    polls = await pollService.getPolls()
+  } catch (error) {
+    console.error("Error fetching polls:", error)
+    // Return empty array if there's an error
   }
-}
 
-// Placeholder data - replace with actual data fetching
-const mockPolls: Poll[] = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    description: "Let's see which programming language is most popular among developers.",
-    totalVotes: 156,
-    isActive: true,
-    createdAt: "2024-01-15T10:00:00Z",
-    author: { name: "John Doe" },
-  },
-  {
-    id: "2",
-    title: "Best framework for building web apps",
-    description: "Which framework do you prefer for building modern web applications?",
-    totalVotes: 89,
-    isActive: true,
-    createdAt: "2024-01-14T15:30:00Z",
-    author: { name: "Jane Smith" },
-  },
-  {
-    id: "3",
-    title: "Preferred database for production",
-    description: "What database do you use most often in production environments?",
-    totalVotes: 234,
-    isActive: false,
-    createdAt: "2024-01-13T09:15:00Z",
-    author: { name: "Mike Johnson" },
-  },
-]
-
-export function PollsList() {
   const formatDate = (dateString: string) => {
     const d = new Date(dateString)
     // Use UTC to be deterministic between server and client
@@ -60,9 +24,24 @@ export function PollsList() {
     return `${month} ${day}, ${year}`
   }
 
+  if (polls.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-muted-foreground mb-4">
+          <Vote className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
+          <p className="text-sm">Be the first to create a poll and get the community voting!</p>
+        </div>
+        <Button asChild>
+          <Link href="/polls/create">Create Your First Poll</Link>
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {mockPolls.map((poll) => (
+      {polls.map((poll) => (
         <Card key={poll.id} className="hover:shadow-md transition-shadow">
           <CardHeader>
             <div className="flex items-start justify-between">

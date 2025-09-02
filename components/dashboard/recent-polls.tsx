@@ -3,38 +3,56 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Vote, Calendar } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
+import { pollService } from "@/lib/db/poll-service"
 
-// Placeholder data - replace with actual data fetching
-const recentPolls = [
-  {
-    id: "1",
-    title: "What's your favorite programming language?",
-    totalVotes: 156,
-    isActive: true,
-    createdAt: "2024-01-15T10:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Best framework for building web apps",
-    totalVotes: 89,
-    isActive: true,
-    createdAt: "2024-01-14T15:30:00Z",
-  },
-  {
-    id: "3",
-    title: "Preferred database for production",
-    totalVotes: 234,
-    isActive: false,
-    createdAt: "2024-01-13T09:15:00Z",
-  },
-]
+export async function RecentPolls() {
+  let userPolls = []
+  
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (user) {
+      userPolls = await pollService.getUserPolls(user.id)
+      // Get only the 5 most recent polls
+      userPolls = userPolls.slice(0, 5)
+    }
+  } catch (error) {
+    console.error("Error fetching user polls:", error)
+    // Return empty array if there's an error
+  }
 
-export function RecentPolls() {
   const formatDate = (dateString: string) => {
     const d = new Date(dateString)
     const month = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" })
     const day = d.getUTCDate()
     return `${month} ${day}`
+  }
+
+  if (userPolls.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Polls</CardTitle>
+          <CardDescription>
+            Your most recent polls and their current status
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="text-muted-foreground mb-4">
+              <Vote className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-semibold mb-2">No polls yet</h3>
+              <p className="text-sm">Create your first poll to get started!</p>
+            </div>
+            <Button asChild>
+              <Link href="/polls/create">Create Your First Poll</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -47,7 +65,7 @@ export function RecentPolls() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {recentPolls.map((poll) => (
+          {userPolls.map((poll) => (
             <div
               key={poll.id}
               className="flex items-center justify-between space-x-4"

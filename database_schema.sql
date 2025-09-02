@@ -1,42 +1,7 @@
-# Supabase Setup Guide
+-- Database Schema for Polling App
+-- Execute these commands in your Supabase SQL Editor
 
-## 1. Create a Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and sign up/login
-2. Create a new project
-3. Wait for the project to be set up
-
-## 2. Get Your Project Credentials
-
-1. Go to your project dashboard
-2. Navigate to Settings > API
-3. Copy the following values:
-   - Project URL
-   - Anon public key
-
-## 3. Set Up Environment Variables
-
-Create a `.env.local` file in your project root with:
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_project_url_here
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
-```
-
-## 4. Configure Authentication
-
-1. Go to Authentication > Settings in your Supabase dashboard
-2. Configure your site URL (e.g., `http://localhost:3000` for development)
-3. Add redirect URLs:
-   - `http://localhost:3000/auth/callback`
-   - `http://localhost:3000/login`
-   - `http://localhost:3000/register`
-
-## 5. Database Schema
-
-### 5.1 Profiles Table (for additional user data)
-
-```sql
+-- 1. Profiles Table (for additional user data)
 CREATE TABLE profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   name TEXT NOT NULL,
@@ -56,11 +21,8 @@ CREATE POLICY "Users can update their own profile" ON profiles
 
 CREATE POLICY "Users can insert their own profile" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
-```
 
-### 5.2 Polls Table
-
-```sql
+-- 2. Polls Table
 CREATE TABLE polls (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   title TEXT NOT NULL,
@@ -89,11 +51,8 @@ CREATE POLICY "Users can update their own polls" ON polls
 
 CREATE POLICY "Users can delete their own polls" ON polls
   FOR DELETE USING (auth.uid() = author_id);
-```
 
-### 5.3 Poll Options Table
-
-```sql
+-- 3. Poll Options Table
 CREATE TABLE poll_options (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   text TEXT NOT NULL,
@@ -149,11 +108,8 @@ CREATE POLICY "Users can delete options for their own polls" ON poll_options
       AND polls.author_id = auth.uid()
     )
   );
-```
 
-### 5.4 Votes Table
-
-```sql
+-- 4. Votes Table
 CREATE TABLE votes (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   poll_id UUID REFERENCES polls(id) ON DELETE CASCADE NOT NULL,
@@ -194,12 +150,8 @@ CREATE POLICY "Users can update their own votes" ON votes
 
 CREATE POLICY "Users can delete their own votes" ON votes
   FOR DELETE USING (auth.uid() = user_id);
-```
 
-### 5.5 Create Indexes for Performance
-
-```sql
--- Indexes for better query performance
+-- 5. Create Indexes for Performance
 CREATE INDEX idx_polls_author_id ON polls(author_id);
 CREATE INDEX idx_polls_created_at ON polls(created_at);
 CREATE INDEX idx_polls_is_active ON polls(is_active);
@@ -210,11 +162,8 @@ CREATE INDEX idx_votes_poll_id ON votes(poll_id);
 CREATE INDEX idx_votes_option_id ON votes(option_id);
 CREATE INDEX idx_votes_user_id ON votes(user_id);
 CREATE INDEX idx_votes_poll_user ON votes(poll_id, user_id);
-```
 
-### 5.6 Create Functions for Vote Counting
-
-```sql
+-- 6. Create Functions for Vote Counting
 -- Function to get total votes for a poll
 CREATE OR REPLACE FUNCTION get_poll_total_votes(poll_uuid UUID)
 RETURNS INTEGER AS $$
@@ -242,32 +191,10 @@ BEGIN
   ORDER BY po.created_at;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-```
 
-### 5.7 Set Up Row Level Security (RLS)
-
-Make sure RLS is enabled on all tables:
-
-```sql
--- Verify RLS is enabled
+-- 7. Verify RLS is enabled
+-- Run this query to verify all tables have RLS enabled
 SELECT schemaname, tablename, rowsecurity 
 FROM pg_tables 
 WHERE schemaname = 'public' 
 AND tablename IN ('profiles', 'polls', 'poll_options', 'votes');
-```
-
-## 6. Test the Setup
-
-1. Run your development server: `npm run dev`
-2. Try registering a new user
-3. Check your Supabase dashboard to see the user in Authentication > Users
-4. Test creating a poll and voting functionality
-
-## Troubleshooting
-
-- Make sure your environment variables are correctly set
-- Check that your redirect URLs are properly configured
-- Ensure your Supabase project is active and not paused
-- Check the browser console for any authentication errors
-- Verify that all tables are created and RLS policies are in place
-- Check the Supabase logs for any SQL errors during table creation

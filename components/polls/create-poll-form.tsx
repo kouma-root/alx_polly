@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import { createPoll } from "@/lib/actions/poll-actions"
 
 const formSchema = z.object({
   title: z.string().min(3, {
@@ -60,19 +61,15 @@ export function CreatePollForm() {
         options: options.filter(option => option.trim() !== ""),
       }
 
-      const res = await fetch("/api/polls", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data?.error || "Failed to create poll")
+      // Use the server action instead of API route
+      const result = await createPoll(formData)
+      
+      if (result.success) {
+        toast.success("Poll created successfully!")
+        router.push("/polls")
+      } else {
+        throw new Error("Failed to create poll")
       }
-
-      toast.success("Poll created successfully!")
-      router.push("/polls")
     } catch (error: any) {
       toast.error(error?.message || "Failed to create poll. Please try again.")
     } finally {
