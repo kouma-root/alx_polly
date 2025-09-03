@@ -40,6 +40,29 @@ export interface CreatePollData {
   options: string[]
 }
 
+export interface EditPollData {
+  id: string
+  title: string
+  description: string
+  options: EditPollOption[]
+  isActive: boolean
+}
+
+export interface EditPollOption {
+  id?: string // Optional for new options
+  text: string
+  pollId?: string // Optional for new options
+  isNew?: boolean // Flag to identify newly added options
+  isDeleted?: boolean // Flag to mark options for deletion
+}
+
+export interface UpdatePollData {
+  title: string
+  description: string
+  options: EditPollOption[]
+  isActive: boolean
+}
+
 export interface LoginData {
   email: string
   password: string

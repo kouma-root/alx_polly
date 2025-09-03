@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { pollService } from "@/lib/db/poll-service"
-import { CreatePollData } from "@/lib/types"
+import { CreatePollData, EditPollData } from "@/lib/types"
 
 export async function createPoll(data: CreatePollData) {
   const supabase = await createClient()
@@ -44,6 +44,120 @@ export async function createPoll(data: CreatePollData) {
   } catch (error) {
     console.error("Error creating poll:", error)
     throw new Error(error instanceof Error ? error.message : "Failed to create poll")
+  }
+}
+
+export async function updatePoll(data: EditPollData) {
+  const supabase = await createClient()
+  
+  // Get the current user
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  
+  if (authError || !user) {
+    throw new Error("You must be logged in to update a poll")
+  }
+
+  // Validate the data
+  if (!data.title || !data.description || !data.options || data.options.length < 2) {
+    throw new Error("Title, description, and at least 2 options are required")
+  }
+
+  // Filter out deleted options and validate
+  const validOptions = data.options.filter(option => !option.isDeleted && option.text.trim() !== "")
+  
+  if (validOptions.length < 2) {
+    throw new Error("You must have at least 2 valid options")
+  }
+
+  try {
+    // Check if the user owns this poll
+    const { data: poll, error: pollError } = await supabase
+      .from('polls')
+      .select('author_id')
+      .eq('id', data.id)
+      .single()
+
+    if (pollError || !poll) {
+      throw new Error("Poll not found")
+    }
+
+    if (poll.author_id !== user.id) {
+      throw new Error("You can only update your own polls")
+    }
+
+    // Update the poll
+    const { error: updateError } = await supabase
+      .from('polls')
+      .update({
+        title: data.title.trim(),
+        description: data.description.trim(),
+        is_active: data.isActive,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', data.id)
+
+    if (updateError) {
+      throw new Error(updateError.message)
+    }
+
+    // Handle poll options
+    const existingOptions = validOptions.filter(opt => opt.id && !opt.isNew)
+    const newOptions = validOptions.filter(opt => opt.isNew)
+
+    // Update existing options
+    for (const option of existingOptions) {
+      if (option.id) {
+        const { error: optionError } = await supabase
+          .from('poll_options')
+          .update({ text: option.text.trim() })
+          .eq('id', option.id)
+
+        if (optionError) {
+          throw new Error(optionError.message)
+        }
+      }
+    }
+
+    // Add new options
+    if (newOptions.length > 0) {
+      const newOptionData = newOptions.map(opt => ({
+        text: opt.text.trim(),
+        poll_id: data.id
+      }))
+
+      const { error: newOptionsError } = await supabase
+        .from('poll_options')
+        .insert(newOptionData)
+
+      if (newOptionsError) {
+        throw new Error(newOptionsError.message)
+      }
+    }
+
+    // Delete options marked for deletion
+    const deletedOptions = data.options.filter(opt => opt.isDeleted && opt.id)
+    if (deletedOptions.length > 0) {
+      const deletedOptionIds = deletedOptions.map(opt => opt.id!).filter(Boolean)
+      
+      const { error: deleteError } = await supabase
+        .from('poll_options')
+        .delete()
+        .in('id', deletedOptionIds)
+
+      if (deleteError) {
+        throw new Error(deleteError.message)
+      }
+    }
+
+    // Revalidate the polls page, dashboard, and specific poll page
+    revalidatePath("/polls")
+    revalidatePath("/dashboard")
+    revalidatePath(`/polls/${data.id}`)
+    
+    return { success: true }
+  } catch (error) {
+    console.error("Error updating poll:", error)
+    throw new Error(error instanceof Error ? error.message : "Failed to update poll")
   }
 }
 
